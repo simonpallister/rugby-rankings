@@ -19,20 +19,41 @@ npm start
 
 # Lint code
 npm lint
+
+# Database commands (requires PostgreSQL)
+npx prisma migrate dev     # Apply migrations
+npx prisma generate        # Generate Prisma client
+
+# Data snapshot commands
+npm run snapshot           # Snapshot both men's and women's rankings
+npm run snapshot:men       # Snapshot men's rankings only
+npm run snapshot:women     # Snapshot women's rankings only
+
+# Backfill commands (for populating historical data)
+npm run backfill           # Generate sample data
+npm run backfill:daily     # Backfill with daily snapshots
+npm run backfill:real      # Backfill with real historical data
 ```
 
 ## Project Overview
 
 A modern web application that calculates World Rugby rankings based on match results. Users can:
-- View current official World Rugby rankings
+- View current official World Rugby rankings (men's and women's)
 - See upcoming international fixtures (next 7 days)
 - Predict match outcomes and see instant ranking calculations
 - Track completed matches that have been applied to rankings
+- **NEW:** View historical ranking trends over time with interactive charts
+- **NEW:** Compare multiple teams' rankings across different time periods
+- **PLANNED:** Track Raeburn Shield holders and history
+- **PLANNED:** View tournament standings (Six Nations, Rugby Championship)
 
 **Key Features:**
 - Live data from World Rugby API
 - Official World Rugby calculation methodology
 - Server-side rendering with 1-hour caching
+- PostgreSQL database for historical data storage
+- Interactive charting with Recharts
+- Dual gender support (men's and women's rugby)
 - Modern responsive UI with dark mode support
 
 ## Architecture
@@ -42,50 +63,98 @@ A modern web application that calculates World Rugby rankings based on match res
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4 (using `@tailwindcss/postcss`)
 - **UI**: React 19
+- **Database**: PostgreSQL with Prisma ORM
+- **Charting**: Recharts
 - **Module System**: ES Modules (`"type": "module"` in package.json)
 
 ### Key Architectural Decisions
 
 **Server Components Pattern:**
 The app uses Next.js Server Components for optimal performance:
-- `app/page.tsx` - Server component that fetches all data server-side
-- Direct API calls to World Rugby (no proxy routes)
+- `app/[gender]/page.tsx` - Server component that fetches all data server-side
+- Direct API calls to World Rugby for live rankings
 - Data cached with `next: { revalidate: 3600 }` (1 hour)
-- Client components only for interactive state (user predictions)
+- Client components only for interactive state (user predictions, chart interactions)
+
+**Route Structure:**
+The app uses dynamic routing with gender segments:
+- `/men` and `/women` - Main rankings calculators
+- `/men/history` and `/women/history` - Historical rankings charts
+- `/men/raeburn-shield` and `/women/raeburn-shield` - (Planned) Shield tracking
+- `/men/tournaments` and `/women/tournaments` - (Planned) Tournament standings
 
 **Data Flow:**
 ```
+Live Rankings:
 World Rugby API → Server Component (page.tsx) → Client Component (RankingsCalculator)
                                                        ↓
                                     User Predictions + Completed Matches
                                                        ↓
                                             Calculated Rankings
+
+Historical Data:
+Daily Snapshot Job → PostgreSQL → API Route → Client Component (HistoricalRankingsView)
+                                                       ↓
+                                              Recharts Line Chart
 ```
+
+**Database Strategy:**
+- Daily snapshots of rankings stored in PostgreSQL
+- Historical data queried via API routes (`/api/rankings/history`)
+- Prisma ORM for type-safe database access
+- API responses cached for 5 minutes
+- Backfill scripts available for populating historical data
 
 ## Project Structure
 
 ```
 rugby-rankings-2/
 ├── app/
-│   ├── page.tsx           # Server component - fetches data, renders page
-│   ├── layout.tsx         # Root layout with metadata
-│   └── globals.css        # Tailwind imports (@import "tailwindcss")
+│   ├── [gender]/                  # Dynamic gender routing
+│   │   ├── page.tsx              # Rankings calculator page
+│   │   ├── layout.tsx            # Gender-specific layout with nav
+│   │   └── history/
+│   │       └── page.tsx          # Historical rankings page
+│   ├── api/
+│   │   └── rankings/
+│   │       ├── history/route.ts  # Historical data API
+│   │       └── snapshot/route.ts # Snapshot trigger API
+│   ├── page.tsx                  # Root redirect to /men
+│   ├── layout.tsx                # Root layout with metadata
+│   └── globals.css               # Tailwind imports (@import "tailwindcss")
 ├── components/
-│   ├── RankingsCalculator.tsx     # Main client component (state management)
-│   ├── RankingsTable.tsx          # Display rankings with flags
-│   ├── FixtureList.tsx            # Show completed/predicted matches
-│   └── FixtureWithOutcomes.tsx    # Interactive fixture with outcome buttons
+│   ├── RankingsCalculator.tsx    # Main client component (state management)
+│   ├── RankingsTable.tsx         # Display rankings with flags
+│   ├── FixtureList.tsx           # Show completed/predicted matches
+│   ├── FixtureWithOutcomes.tsx   # Interactive fixture with outcome buttons
+│   ├── HistoricalRankingsView.tsx # Historical data viewer with controls
+│   ├── charts/
+│   │   └── RankingsLineChart.tsx # Recharts line chart component
+│   └── layout/
+│       ├── Header.tsx            # App header with logo
+│       ├── GenderToggle.tsx      # Men/Women toggle
+│       └── MainNav.tsx           # Main navigation tabs
 ├── lib/
-│   ├── rankings.ts        # World Rugby calculation algorithm
-│   ├── api.ts            # Server-side data fetching + transformations
-│   └── countries.ts      # Country flag emoji mappings
+│   ├── rankings.ts               # World Rugby calculation algorithm
+│   ├── api.ts                    # Server-side data fetching + transformations
+│   ├── countries.ts              # Country flag emoji mappings
+│   ├── db/
+│   │   ├── client.ts             # Prisma client instance
+│   │   └── rankings.ts           # Database query functions
+│   └── generated/
+│       └── prisma/               # Generated Prisma client
+├── scripts/
+│   ├── snapshot-rankings.ts      # Daily snapshot script
+│   ├── backfill-sample-data.ts   # Generate test data
+│   ├── backfill-daily-data.ts    # Backfill daily snapshots
+│   └── backfill-real-historical-data.ts # Real data backfill
+├── prisma/
+│   └── schema.prisma             # Database schema
 ├── types/
-│   └── index.ts          # TypeScript interfaces
-├── postcss.config.js     # PostCSS with @tailwindcss/postcss plugin
-└── tsconfig.json         # TypeScript configuration
+│   └── index.ts                  # TypeScript interfaces
+├── postcss.config.js             # PostCSS with @tailwindcss/postcss plugin
+└── tsconfig.json                 # TypeScript configuration
 ```
-
-**Note:** The README.md mentions `app/api/` routes, but these have been removed. The app now uses server components with direct API calls instead.
 
 ## World Rugby Ranking Algorithm
 
