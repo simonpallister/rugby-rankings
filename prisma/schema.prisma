@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enum for gender (men's or women's rugby)
+enum Gender {
+  MEN
+  WOMEN
+}
+
+// Enum for tournament types
+enum TournamentType {
+  SIX_NATIONS
+  RUGBY_CHAMPIONSHIP
+}
+
+// Historical rankings - snapshots of team rankings over time
+model HistoricalRanking {
+  id            String   @id @default(cuid())
+  teamId        String
+  teamName      String
+  abbreviation  String
+  points        Float
+  position      Int
+  effectiveDate DateTime
+  gender        Gender
+  createdAt     DateTime @default(now())
+
+  @@unique([teamId, effectiveDate, gender])
+  @@index([gender, effectiveDate])
+  @@index([teamId, gender])
+}
+
+// Historical fixtures - completed matches
+model HistoricalFixture {
+  id           String   @id @default(cuid())
+  matchId      String   @unique
+  homeTeamId   String
+  homeTeamName String
+  awayTeamId   String
+  awayTeamName String
+  homeScore    Int
+  awayScore    Int
+  date         DateTime
+  venue        String?
+  isRwc        Boolean  @default(false)
+  noHome       Boolean  @default(false)
+  gender       Gender
+  createdAt    DateTime @default(now())
+
+  // Relations
+  tournamentMatches TournamentMatch[]
+  raeburnDefenses   RaeburnShieldHistory[] @relation("ShieldDefenses")
+  raeburnLoss       RaeburnShieldHistory[] @relation("ShieldLoss")
+
+  @@index([gender, date])
+  @@index([homeTeamId, gender])
+  @@index([awayTeamId, gender])
+}
+
+// Current Raeburn Shield holders
+model RaeburnShield {
+  id           String   @id @default(cuid())
+  holderId     String
+  holderName   String
+  holderSince  DateTime
+  defenses     Int      @default(0)
+  gender       Gender
+  isCurrent    Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([gender, isCurrent])
+  @@index([gender])
+}
+
+// Historical Raeburn Shield lineage
+model RaeburnShieldHistory {
+  id              String    @id @default(cuid())
+  holderId        String
+  holderName      String
+  acquiredDate    DateTime
+  acquiredMatchId String
+  lostDate        DateTime?
+  lostMatchId     String?
+  defenses        Int       @default(0)
+  gender          Gender
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  defenseMatches HistoricalFixture[] @relation("ShieldDefenses")
+  lossMatch      HistoricalFixture?  @relation("ShieldLoss", fields: [lostMatchId], references: [matchId])
+
+  @@index([gender, acquiredDate])
+  @@index([holderId, gender])
+}
+
+// Tournaments (Six Nations, Rugby Championship)
+model Tournament {
+  id        String         @id @default(cuid())
+  type      TournamentType
+  year      Int
+  gender    Gender
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime       @default(now())
+
+  // Relations
+  standings TournamentStanding[]
+  matches   TournamentMatch[]
+
+  @@unique([type, year, gender])
+  @@index([gender, year])
+}
+
+// Tournament standings/table
+model TournamentStanding {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  teamId         String
+  teamName       String
+  played         Int        @default(0)
+  won            Int        @default(0)
+  drawn          Int        @default(0)
+  lost           Int        @default(0)
+  pointsFor      Int        @default(0)
+  pointsAgainst  Int        @default(0)
+  pointsDiff     Int        @default(0)
+  bonusPoints    Int        @default(0)
+  totalPoints    Int        @default(0)
+  position       Int
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId, position])
+}
+
+// Links fixtures to tournaments
+model TournamentMatch {
+  id           String   @id @default(cuid())
+  tournamentId String
+  fixtureId    String
+  round        Int?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  fixture    HistoricalFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, fixtureId])
+  @@index([tournamentId])
+}

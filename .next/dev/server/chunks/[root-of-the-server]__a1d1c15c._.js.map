@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 46, "column": 0}, "map": {"version":3,"sources":["file:///Users/simonpallister/Code/rugby-rankings-2/app/api/rankings/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\";\n\nexport async function GET() {\n  try {\n    const response = await fetch(\n      \"https://api.wr-rims-prod.pulselive.com/rugby/v3/rankings/mru?language=en&client=pulse\",\n      {\n        headers: {\n          Accept: \"application/json\",\n        },\n        next: { revalidate: 3600 }, // Cache for 1 hour\n      }\n    );\n\n    if (!response.ok) {\n      throw new Error(\"Failed to fetch rankings\");\n    }\n\n    const data = await response.json();\n    return NextResponse.json(data);\n  } catch (error) {\n    console.error(\"Error fetching rankings:\", error);\n    return NextResponse.json(\n      { error: \"Failed to fetch rankings\" },\n      { status: 500 }\n    );\n  }\n}\n"],"names":[],"mappings":";;;;AAAA;;AAEO,eAAe;IACpB,IAAI;QACF,MAAM,WAAW,MAAM,MACrB,yFACA;YACE,SAAS;gBACP,QAAQ;YACV;YACA,MAAM;gBAAE,YAAY;YAAK;QAC3B;QAGF,IAAI,CAAC,SAAS,EAAE,EAAE;YAChB,MAAM,IAAI,MAAM;QAClB;QAEA,MAAM,OAAO,MAAM,SAAS,IAAI;QAChC,OAAO,gJAAY,CAAC,IAAI,CAAC;IAC3B,EAAE,OAAO,OAAO;QACd,QAAQ,KAAK,CAAC,4BAA4B;QAC1C,OAAO,gJAAY,CAAC,IAAI,CACtB;YAAE,OAAO;QAA2B,GACpC;YAAE,QAAQ;QAAI;IAElB;AACF"}}]
-}

@@ -1,4 +1,4 @@
-import { Ranking, Fixture, Team } from "@/types";
+import { Ranking, Fixture, Team, Gender } from "@/types";
 
 export interface WRRankingEntry {
   team: {
@@ -15,7 +15,11 @@ export interface WRRankingEntry {
 export interface WRRankingsResponse {
   entries: WRRankingEntry[];
   label: string;
-  effectiveTime: string;
+  effective: {
+    millis: number;
+    gmtOffset: number;
+    label: string;
+  };
 }
 
 export interface WRMatch {
@@ -120,38 +124,51 @@ export function transformFixtures(
 
 /**
  * Fetch rankings from World Rugby API (server-side)
+ * @param gender - 'men' or 'women'
+ * @param date - Optional date string in YYYY-MM-DD format to fetch historical rankings
  */
-export async function fetchRankings(): Promise<{
+export async function fetchRankings(
+  gender: Gender = 'men',
+  date?: string
+): Promise<{
   rankings: Ranking[];
   effectiveTime: string;
 }> {
-  const response = await fetch(
-    "https://api.wr-rims-prod.pulselive.com/rugby/v3/rankings/mru?language=en&client=pulse",
-    {
-      headers: {
-        Accept: "application/json",
-      },
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    }
-  );
+  // Use 'mru' for men's rugby, 'wru' for women's rugby
+  const rankingType = gender === 'men' ? 'mru' : 'wru';
+
+  // Build URL with optional date parameter
+  let url = `https://api.wr-rims-prod.pulselive.com/rugby/v3/rankings/${rankingType}?language=en&client=pulse`;
+  if (date) {
+    url += `&date=${date}`;
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch rankings");
+    throw new Error(`Failed to fetch ${gender}'s rankings${date ? ` for ${date}` : ''}`);
   }
 
   const data: WRRankingsResponse = await response.json();
   return {
     rankings: transformRankings(data),
-    effectiveTime: data.effectiveTime,
+    effectiveTime: new Date(data.effective.millis).toISOString(),
   };
 }
 
 /**
  * Fetch fixtures from World Rugby API (server-side)
+ * Note: Fixtures API returns all matches, filtering by ranked teams happens client-side
  */
 export async function fetchFixtures(
   startDate: string,
-  endDate: string
+  endDate: string,
+  gender: Gender = 'men'
 ): Promise<WRMatch[]> {
   const allMatches: WRMatch[] = [];
   let page = 0;
@@ -169,7 +186,7 @@ export async function fetchFixtures(
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch fixtures");
+      throw new Error(`Failed to fetch ${gender}'s fixtures`);
     }
 
     const data = await response.json();

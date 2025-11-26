@@ -13,7 +13,19 @@
       "Bash(npx tailwindcss:*)",
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(jq:*)"
+      "Bash(jq:*)",
+      "Bash(npx prisma init)",
+      "Bash(docker-compose up:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run snapshot:*)",
+      "Bash(npm run snapshot:men:*)",
+      "Bash(npm run snapshot:women:*)",
+      "Bash(npm run backfill:*)",
+      "Bash(npm run backfill:daily:*)",
+      "WebFetch(domain:api.wr-rims-prod.pulselive.com)",
+      "Bash(npm run backfill:real:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

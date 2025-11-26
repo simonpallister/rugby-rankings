@@ -7,22 +7,37 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "snapshot": "tsx scripts/snapshot-rankings.ts",
+    "snapshot:men": "tsx scripts/snapshot-rankings.ts men",
+    "snapshot:women": "tsx scripts/snapshot-rankings.ts women",
+    "backfill": "tsx scripts/backfill-sample-data.ts",
+    "backfill:daily": "tsx scripts/backfill-daily-data.ts",
+    "backfill:real": "tsx scripts/backfill-real-historical-data.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.0.1",
+    "@prisma/client": "^7.0.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.6",
     "autoprefixer": "^10.4.22",
     "next": "^16.0.3",
+    "pg": "^8.16.3",
     "postcss": "^8.5.6",
+    "prisma": "^7.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.5.0",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "tsx": "^4.20.6"
   }
 }

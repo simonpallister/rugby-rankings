@@ -1,3 +1,6 @@
+// Gender type for men's vs women's rugby
+export type Gender = 'men' | 'women';
+
 export interface Team {
   id: string;
   name: string;
