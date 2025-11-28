@@ -213,6 +213,12 @@ awayChange = -homeChange;
 
 ### World Rugby Endpoints
 
+The app integrates with the World Rugby RIMS (Rugby Information Management System) API. Detailed documentation for each endpoint is available:
+
+- **[Rankings API Documentation](api-documentation-rankings.md)** - Complete reference for rankings endpoints
+- **[Match API Documentation](api-documentation-match.md)** - Match data and fixtures
+- **[Event API Documentation](api-documentation-events.md)** - Tournament and competition events
+
 **Rankings API:**
 ```
 GET https://api.wr-rims-prod.pulselive.com/rugby/v3/rankings/mru?language=en&client=pulse  # Men's
